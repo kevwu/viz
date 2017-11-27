@@ -3,11 +3,13 @@ const path = require("path")
 const ExtractTextPlugin = require("extract-text-webpack-plugin")
 
 const BUILD = path.resolve(__dirname, 'static/')
-const SRC = path.resolve(__dirname, 'src/client/')
+const SRC = path.resolve(__dirname, 'src/')
 
 let config = {
 	entry: {
-		bubbles: [path.resolve(SRC, 'bubbles/js/index.js'), path.resolve(SRC, 'bubbles/scss/main.scss')]
+		bubbles: [path.resolve(SRC, 'bubbles/index.js'), path.resolve(SRC, 'bubbles/main.scss')],
+		"2d": [path.resolve(SRC, '2d/index.js'), path.resolve(SRC, '2d/main.scss')],
+		flower: [path.resolve(SRC, 'flower/index.js'), path.resolve(SRC, 'flower/main.scss')]
 	},
 	output: {
 		path: path.resolve(BUILD),
@@ -32,7 +34,7 @@ let config = {
 			filename: 'css/[name].css',
 			allChunks: true
 		})
-	]
+	],
 }
 
 module.exports = config
