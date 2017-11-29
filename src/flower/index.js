@@ -24,66 +24,6 @@ var buffer;
 var analyser;
 
 window.onload = function () {
-	app.init();
-	// console.log('audio loader connected');
-
-	window.addEventListener('drop', onDrop, false);
-	window.addEventListener('dragover', onDrag, false);
-
-	function onDrag(e) {
-		e.stopPropagation();
-		e.preventDefault();
-		// $('#notification').velocity('fadeOut', { duration: 150 });
-		return false;
-	}
-
-	function onDrop(e) {
-		e.stopPropagation();
-		e.preventDefault();
-		var droppedFiles = e.dataTransfer.files;
-		initiateAudio(droppedFiles[0]); // initiates audio from the dropped file
-	}
-
-	function initiateAudio(data) {
-		app.audio.src = URL.createObjectURL(data); // sets the audio source to the dropped file
-		// app.audio.autoplay = true;
-		app.audio.play();
-		app.play = true;
-	}
-
-	app.animate();
-};
-
-if(app.audio){
-	app.audio.remove();
-	window.cancelAnimationFrame(app.animationFrame);
-}
-app.audio = document.createElement('audio'); // creates an html audio element
-document.body.appendChild(app.audio);
-app.ctx = new (window.AudioContext || window.webkitAudioContext)(); // creates audioNode
-app.audio.src = "/mp3/audio.mp3"
-source = app.ctx.createMediaElementSource(app.audio); // creates audio source
-analyser = app.ctx.createAnalyser(); // creates analyserNode
-source.connect(app.ctx.destination); // connects the audioNode to the audioDestinationNode (computer speakers)
-source.connect(analyser); // connects the analyser node to the audioNode and the audioDestinationNode
-
-app.audio.play()
-app.play = true;
-
-app.init = init;
-app.animate = animate;
-app.animateParticles = animateParticles;
-
-let mouseX = 0, mouseY = 0,
-	windowHalfX = window.innerWidth / 2,
-	windowHalfY = window.innerHeight / 2;
-
-let camera, scene, renderer;
-
-var particle;
-var particles;
-
-function init() {
 	scene = new THREE.Scene();
 	let width = window.innerWidth;
 	let height = window.innerHeight;
@@ -100,7 +40,7 @@ function init() {
 	renderer.setClearColor(0x000000, 1);
 
 	const PI2 = Math.PI * 2;
-	particles = new Array();
+	particles = [];
 
 	for (let i = 0; i <=2048; i++) {
 		const material = new THREE.SpriteCanvasMaterial({
@@ -137,19 +77,13 @@ function init() {
 				}
 				break;
 			case 82:
-				flowerProperties.toggleRed = true;
-				flowerProperties.toggleGreen = false;
-				flowerProperties.toggleBlue = false;
+				flowerProperties.toggleRed = !flowerProperties.toggleRed;
 				break;
 			case 71:
-				flowerProperties.toggleRed = false;
-				flowerProperties.toggleGreen = true;
-				flowerProperties.toggleBlue = false;
+				flowerProperties.toggleGreen = !flowerProperties.toggleGreen;
 				break;
 			case 66:
-				flowerProperties.toggleRed = false;
-				flowerProperties.toggleGreen = false;
-				flowerProperties.toggleBlue = true;
+				flowerProperties.toggleBlue = !flowerProperties.toggleBlue;
 				break;
 			case 65:
 				flowerProperties.animate = !flowerProperties.animate;
@@ -187,8 +121,48 @@ function init() {
 	document.addEventListener('touchstart', onDocumentTouchStart, false);
 	document.addEventListener('touchmove', onDocumentTouchMove, false);
 	document.addEventListener('keydown', onKeyDown, false);
+	window.addEventListener('drop', onDrop, false);
+	window.addEventListener('dragover', onDrag, false);
 
-}
+	function onDrag(e) {
+		e.stopPropagation();
+		e.preventDefault();
+		return false;
+	}
+
+	function onDrop(e) {
+		e.stopPropagation();
+		e.preventDefault();
+		var droppedFiles = e.dataTransfer.files;
+		app.audio.src = URL.createObjectURL(droppedFiles[0]); // sets the audio source to the dropped file
+		// app.audio.autoplay = true;
+		app.audio.play();
+		app.play = true;
+	}
+
+	app.animate();
+};
+
+app.audio = new Audio()
+document.body.appendChild(app.audio);
+app.ctx = new (window.AudioContext || window.webkitAudioContext)(); // creates audioNode
+app.audio.src = "/mp3/audio.mp3"
+source = app.ctx.createMediaElementSource(app.audio); // creates audio source
+analyser = app.ctx.createAnalyser(); // creates analyserNode
+source.connect(app.ctx.destination); // connects the audioNode to the audioDestinationNode (computer speakers)
+source.connect(analyser); // connects the analyser node to the audioNode and the audioDestinationNode
+
+app.audio.play()
+app.play = true;
+
+app.animate = animate;
+app.animateParticles = animateParticles;
+
+let mouseX = 0, mouseY = 0,
+	windowHalfX = window.innerWidth / 2, windowHalfY = window.innerHeight / 2;
+
+let camera, scene, renderer;
+
 const flowerProperties = {}
 
 flowerProperties.toggleRed = true;
@@ -220,7 +194,19 @@ function animate() {
 	app.animationFrame = (window.requestAnimationFrame || window.webkitRequestAnimationFrame)(app.animate);
 	// stats.begin();
 	animateParticles();
-	checkVisualizer();
+
+	if(app.flowerCounter) {
+		flowerProperties.flowerAngle += 0.0000004;
+		if(flowerProperties.flowerAngle >= 2.87) {
+			app.flowerCounter = false;
+		}
+	}
+	else {
+		flowerProperties.flowerAngle -= 0.0000004;
+		if(flowerProperties.flowerAngle <= 2.85) {
+			app.flowerCounter = true;
+		}
+	}
 	camera.lookAt( scene.position );
 	renderer.render( scene, camera );
 	// stats.end();
@@ -234,6 +220,9 @@ AnalyserNode.prototype.getFloatTimeDomainData = function(array) {
 	}
 };
 
+var particle;
+var particles;
+
 function animateParticles(){
 	// Fast Fourier Transform (FFT) used to determine waveform
 	const timeFrequencyData = new Uint8Array(analyser.fftSize);
@@ -242,123 +231,41 @@ function animateParticles(){
 	analyser.getFloatTimeDomainData(timeFloatData);
 	for (let j = 0; j <= particles.length; j++){
 		particle = particles[j++];
+		let R, G, B
+
+		R = flowerProperties.R + (timeFloatData[j]);
+		G = flowerProperties.G + (timeFloatData[j]);
+		B = flowerProperties.B + (timeFloatData[j]);
+
 		if (flowerProperties.toggleRed){
-			// forces red by adding the timeFloatData rather than subtracting
-			var R = flowerProperties.R + (timeFloatData[j]);
-			var G = flowerProperties.G - (timeFloatData[j]);
-			var B = flowerProperties.B - (timeFloatData[j]);
-			particle.material.color.setRGB(R, G, B);
+			R = flowerProperties.R - (timeFloatData[j]);
 		}
 		else if (flowerProperties.toggleGreen){
 			// forces green by adding the timeFloatData rather than subtracting
-			var R = flowerProperties.R - (timeFloatData[j]);
-			var G = flowerProperties.G + (timeFloatData[j]);
-			var B = flowerProperties.B - (timeFloatData[j]);
-			particle.material.color.setRGB(R, G, B);
+			G = flowerProperties.G - (timeFloatData[j]);
 		}
 		else if (flowerProperties.toggleBlue){
 			// forces blue by adding  the timeFloatData rather than subtracting
-			var R = flowerProperties.R - (timeFloatData[j]);
-			var G = flowerProperties.G - (timeFloatData[j]);
-			var B = flowerProperties.B + (timeFloatData[j]);
-			particle.material.color.setRGB(R, G, B);
+			B = flowerProperties.B - (timeFloatData[j]);
 		}
-		else {
-			particle.material.color.setHex(0xffffff);
-		}
-		if (flowerProperties.spiral){
-			// Archimedean Spiral
-			particle.position.x = (flowerProperties.a + flowerProperties.b * ((flowerProperties.angle / 100) * j ))
-				* Math.sin( ((flowerProperties.angle / 100) * j) );
-			particle.position.y = (flowerProperties.a + flowerProperties.b * ((flowerProperties.angle / 100) * j ))
-				* Math.cos( ((flowerProperties.angle / 100) * j) );
-			particle.position.z = (timeFloatData[j] * timeFrequencyData[j] * flowerProperties.intensity);
-			camera.position.y = 0;
-		}
+
+		particle.material.color.setRGB(R, G, B);
+
+		// Archimedean Wavy Spiral with opposite sin and cos to generate crossover in flower pattern
+		particle.position.x = (flowerProperties.aFlower + flowerProperties.bFlower * ((flowerProperties.flowerAngle / 100) * j))
+			* Math.cos(( (flowerProperties.flowerAngle / 100) * j))
+			+ Math.sin(j / (flowerProperties.flowerAngle / 100)) * 17;
+		particle.position.y = (flowerProperties.aFlower + flowerProperties.bFlower * ((flowerProperties.flowerAngle / 100) * j))
+			* Math.sin(( (flowerProperties.flowerAngle / 100) * j))
+			+ Math.cos(j / (flowerProperties.flowerAngle / 100)) * 17;
+		particle.position.z = (timeFloatData[j] * timeFrequencyData[j] * flowerProperties.intensity);
+		camera.position.y = 0;
 	}
 
 	camera.fov = flowerProperties.fov;
 	camera.updateProjectionMatrix();
 }
 
-function checkVisualizer(){
-	if(flowerProperties.animate){
-		if(flowerProperties.spiral){
-			changeAngle();
-		}
-		else if (flowerProperties.wavySpiral){
-			changeWavyAngle();
-		}
-		else if (flowerProperties.flower){
-			changeFlowerAngle();
-		}
-		else if (flowerProperties.circle){
-			changeCircleRadius();
-		}
-	}
-}
-
-app.spiralCounter = true;
-app.wavySpiralCounter = true;
-app.circleCounter = true;
-app.flowerCounter = false;
-
-function changeAngle(){
-	if (app.spiralCounter){
-		flowerProperties.angle += 0.0008;
-		if (flowerProperties.angle >= 13){
-			app.spiralCounter = false;
-		}
-	}
-	else {
-		flowerProperties.angle -= 0.0008;
-		if(flowerProperties.angle <= 9){
-			app.spiralCounter = true;
-		}
-	}
-}
-function changeWavyAngle(){
-	if (app.wavySpiralCounter){
-		flowerProperties.wavyAngle += 0.000004;
-		if (flowerProperties.wavyAngle >= 2.48){
-			app.wavySpiralCounter = false;
-		}
-	}
-	else {
-		flowerProperties.wavyAngle -= 0.000006;
-		if (flowerProperties.wavyAngle <= 2.43){
-			app.wavySpiralCounter = true;
-		}
-	}
-}
-function changeFlowerAngle(){
-	if (app.flowerCounter){
-		flowerProperties.flowerAngle += 0.0000004;
-		if (flowerProperties.flowerAngle >= 2.87){
-			app.flowerCounter = false;
-		}
-	}
-	else {
-		flowerProperties.flowerAngle -= 0.0000004;
-		if (flowerProperties.flowerAngle <= 2.85){
-			app.flowerCounter = true;
-		}
-	}
-}
-function changeCircleRadius(){
-	if (app.circleCounter){
-		flowerProperties.radius += 0.05;
-		if (flowerProperties.radius >= 65){
-			app.circleCounter = false;
-		}
-	}
-	else {
-		flowerProperties.radius -= 0.05;
-		if (flowerProperties.radius <= 35){
-			console.log('hit');
-			app.circleCounter = true;
-		}
-	}
-}
+app.flowerCounter = true;
 
 console.log("'1' '2' '3' '4' toggle visualizers \n'R' 'G' 'B' toggle colors \n'A' toggles animation \n'SPACE' toggles playback \n'h' toggles extra controls");
