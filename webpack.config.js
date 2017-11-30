@@ -5,12 +5,13 @@ const ExtractTextPlugin = require("extract-text-webpack-plugin")
 const BUILD = path.resolve(__dirname, 'static/')
 const SRC = path.resolve(__dirname, 'src/')
 
+const NAMES = ["bubbles", "2d", "flower", "svg"]
+
 let config = {
-	entry: {
-		bubbles: [path.resolve(SRC, 'bubbles/index.js'), path.resolve(SRC, 'bubbles/main.scss')],
-		"2d": [path.resolve(SRC, '2d/index.js'), path.resolve(SRC, '2d/main.scss')],
-		flower: [path.resolve(SRC, 'flower/index.js'), path.resolve(SRC, 'flower/main.scss')]
-	},
+	entry: NAMES.reduce((prev, name) => {
+		prev[name] = [path.resolve(SRC, name + "/index.js"), path.resolve(SRC, name + '/main.scss')]
+		return prev
+	}, {}),
 	output: {
 		path: path.resolve(BUILD),
 		filename: 'js/[name].js',
