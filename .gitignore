@@ -1,6 +1,8 @@
 .idea/
 node_modules/
 
+ssl/
+
 static/mp3/
 static/css/
 static/js/

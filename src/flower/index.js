@@ -14,6 +14,7 @@ import * as THREE from "three"
 
 /**
  * @author mrdoob / http://mrdoob.com/
+ * @author soniaboller / https://soniaboller.github.io/
  */
 
 // audioLoader
